@@ -1,20 +1,18 @@
 const request = require('request');
 const _ = require('lodash');
 
-const teamsOfInterest = ['CHC', 'SF'];
+const config = require('./job.config');
 
 const url = getFormattedUrl();
-
 request.get({
     url: url,
     json: true
-}, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+}, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
         const games = body.data.games.game;
-        const gamesOfInterest = _.filter(games, (x) => _.includes(teamsOfInterest, x.home_name_abbrev));
+        const gamesOfInterest = _.filter(games, (x) => _.includes(config.teamsOfInterest, x.home_name_abbrev));
         const formattedGames = getFormattedGames(gamesOfInterest);
 
-        console.log(gamesOfInterest);
         console.log(formattedGames);
     }
 });
