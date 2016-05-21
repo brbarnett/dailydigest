@@ -1,5 +1,6 @@
-const request = require('request');
 const _ = require('lodash');
+const fs = require('fs');
+const request = require('request');
 
 const config = require('./job.config');
 
@@ -12,8 +13,9 @@ request.get({
         const games = body.data.games.game;
         const gamesOfInterest = _.filter(games, (x) => _.includes(config.teamsOfInterest, x.home_name_abbrev));
         const formattedGames = getFormattedGames(gamesOfInterest);
-
-        console.log(formattedGames);
+        getFormattedEmail(formattedGames).then((body) => {
+            console.log(body);
+        })
     }
 });
 
@@ -46,4 +48,36 @@ function getFormattedGames(games) {
     });
 
     return formattedGames;
+}
+
+function getFormattedEmail(games) {
+    const promise = new Promise((resolve, reject) => {
+        fs.readFile('./email.html', 'utf-8', (err, data) => {
+            if(err) reject(err);
+            
+            var html = data;
+            var rows = '';
+
+            fs.readFile('./gamerow.html', 'utf-8', (err, data) => {
+                if(err) reject(err);
+                
+                const row = data;
+
+                _.forEach(games, (game) => {
+                    var gamerow = row;
+                    gamerow = _.replace(gamerow, /{{away}}/, game.away.name);
+                    gamerow = _.replace(gamerow, /{{home}}/, game.home.name);
+                    gamerow = _.replace(gamerow, /{{location}}/, game.location);
+                    gamerow = _.replace(gamerow, /{{time}}/, game.time);
+                    rows += gamerow;
+                });
+
+                html = _.replace(html, /{{gamerows}}/, rows);
+
+                resolve(html);
+            });
+        });
+    });
+
+    return promise;
 }
