@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const fs = require('fs');
 const request = require('request');
+const sendgrid = require('sendgrid');
 
 const config = require('./job.config');
 
