@@ -59,13 +59,13 @@ function getFormattedGames(games) {
 
 function getFormattedEmail(games) {
     const promise = new Promise((resolve, reject) => {
-        fs.readFile('./email.html', 'utf-8', (err, data) => {
+        fs.readFile('./job/email.html', 'utf-8', (err, data) => {
             if (err) reject(err);
 
             var html = data;
             var rows = '';
 
-            fs.readFile('./gamerow.html', 'utf-8', (err, data) => {
+            fs.readFile('./job/gamerow.html', 'utf-8', (err, data) => {
                 if (err) reject(err);
 
                 const row = data;
