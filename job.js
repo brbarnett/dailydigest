@@ -4,8 +4,7 @@ const request = require('request');
 
 const jobConfig = require('./job.config');
 
-const sendgridConfig = require('./sendgrid.config');
-const sendgrid = require('sendgrid')(sendgridConfig.apiKey);
+const email = require('./email');
 
 const url = getFormattedUrl();
 request.get({
@@ -22,25 +21,10 @@ request.get({
 
         const formattedGames = getFormattedGames(gamesOfInterest);
         getFormattedEmail(formattedGames).then((body) => {
-            sendEmail(body);
+            email.send(body, jobConfig.recipients);
         });
     }
 });
-
-function sendEmail(body) {
-    var email = new sendgrid.Email();
-
-    _.forEach(jobConfig.recipients, (recipient) => {
-       email.addTo(recipient); 
-    });
-
-    email.setFrom('no-reply@echosolutionsgroup.com');
-    email.setFromName('Daily Digest Job');
-    email.setSubject('Daily Digest Email');
-    email.setHtml(body);
-
-    sendgrid.send(email);
-}
 
 function getFormattedUrl() {
     const now = new Date();
