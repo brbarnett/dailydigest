@@ -1,9 +1,11 @@
 const _ = require('lodash');
 const fs = require('fs');
 const request = require('request');
-const sendgrid = require('sendgrid');
 
-const config = require('./job.config');
+const jobConfig = require('./job.config');
+
+const sendgridConfig = require('./sendgrid.config');
+const sendgrid = require('sendgrid')(sendgridConfig.apiKey);
 
 const url = getFormattedUrl();
 request.get({
@@ -12,13 +14,33 @@ request.get({
 }, (error, response, body) => {
     if (!error && response.statusCode === 200) {
         const games = body.data.games.game;
-        const gamesOfInterest = _.filter(games, (x) => _.includes(config.teamsOfInterest, x.home_name_abbrev));
+        const gamesOfInterest = _.filter(games, (x) =>
+            _.includes(jobConfig.teamsOfInterest, x.home_name_abbrev)
+            || _.includes(jobConfig.teamsOfInterest, x.away_name_abbrev));
+
+        if (gamesOfInterest.length <= 0) return; // don't send email if there are no games of interest today
+
         const formattedGames = getFormattedGames(gamesOfInterest);
         getFormattedEmail(formattedGames).then((body) => {
-            console.log(body);
-        })
+            sendEmail(body);
+        });
     }
 });
+
+function sendEmail(body) {
+    var email = new sendgrid.Email();
+
+    _.forEach(jobConfig.recipients, (recipient) => {
+       email.addTo(recipient); 
+    });
+
+    email.setFrom('no-reply@echosolutionsgroup.com');
+    email.setFromName('Daily Digest Job');
+    email.setSubject('Daily Digest Email');
+    email.setHtml(body);
+
+    sendgrid.send(email);
+}
 
 function getFormattedUrl() {
     const now = new Date();
@@ -54,14 +76,14 @@ function getFormattedGames(games) {
 function getFormattedEmail(games) {
     const promise = new Promise((resolve, reject) => {
         fs.readFile('./email.html', 'utf-8', (err, data) => {
-            if(err) reject(err);
-            
+            if (err) reject(err);
+
             var html = data;
             var rows = '';
 
             fs.readFile('./gamerow.html', 'utf-8', (err, data) => {
-                if(err) reject(err);
-                
+                if (err) reject(err);
+
                 const row = data;
 
                 _.forEach(games, (game) => {
